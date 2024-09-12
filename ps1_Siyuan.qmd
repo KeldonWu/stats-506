@@ -1,0 +1,242 @@
+---
+title: "Problem set 1 Siyuan Wu"
+output: html_document
+date: "2024-08-29"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+```
+
+## Problem Set 1
+
+### Problem 1 Wine Data
+
+#### a
+
+```{r}
+wine <- read.csv("~/Downloads/umich/2024 fall/stats 506/hw/problem set1/wine/wine.data", header=FALSE)
+colnames(wine)<-c("class","Alcohol", "Malic_acid",
+ 	"Ash",
+	"Alcalinity_of_ash",  
+ 	"Magnesium",
+	"Total_phenols",
+ 	"Flavanoids",
+ 	"Nonflavanoid_phenols",
+ 	"Proanthocyanins",
+	"Color_intensity",
+ 	"Hue",
+ 	"OD280/OD315_of_diluted_wines",
+ 	"Proline")
+```
+
+#### b
+
+```{r}
+table(wine$class)
+```
+
+It is same as the document noted about the numbers of wine in each class.
+
+#### c
+
+##### 1
+
+```{r}
+cor1<-cor(wine$Alcohol,wine$Color_intensity)
+```
+
+The correlation is `r cor1`.
+
+##### 2
+
+```{r}
+wineclass1<-wine[which(wine$class==1),]
+wineclass2<-wine[which(wine$class==2),]
+wineclass3<-wine[which(wine$class==3),]
+cor2_1<-cor(wineclass1$Alcohol,wineclass1$Color_intensity)
+cor2_2<-cor(wineclass2$Alcohol,wineclass2$Color_intensity)
+cor2_3<-cor(wineclass3$Alcohol,wineclass3$Color_intensity)
+print(c(cor2_1,cor2_2,cor2_3))
+```
+
+The correlation of class 1 is highest, while correlation of class 2 is lowest.
+
+##### 3
+
+```{r}
+targetac<-wine[which.max(wine$Color_intensity),]$Alcohol
+```
+
+The alcohol content is `r targetac`.
+
+##### 4
+
+```{r}
+temp=0
+for (i in 1:nrow(wine)){
+  if (wine[i,]$Proanthocyanins>wine[i,]$Ash){
+    temp=temp+1
+  }
+}
+perc<-temp/nrow(wine)*100
+```
+
+The percentage is `r perc`%.
+
+#### d
+
+```{r}
+
+tableD<-t(data.frame(colMeans(wine),colMeans(wineclass1),colMeans(wineclass2),colMeans(wineclass3)))
+rownames(tableD)<-c("All","class_1","class_2","class_3")
+tableD<-tableD[,-1]
+tableD
+```
+
+#### e
+
+```{r}
+
+t1=wine[which(wine$class==1|wine$class==2),]
+t.test(Total_phenols~ class, t1)
+t2=wine[which(wine$class==2|wine$class==3),]
+t.test(Total_phenols~ class, t2)
+t3=wine[which(wine$class==1|wine$class==3),]
+t.test(Total_phenols~ class, t3)
+```
+
+Based on the result that all the p-values are smaller than 0.05, we can have the conclusion as the expectation of level of phenols differs across the three classes.
+
+### Problem 2 **AskAManager.org Data**
+
+#### a
+
+```{r}
+AskAManager<-read.csv("~/Downloads/umich/2024 fall/stats 506/hw/problem set1/AskAManager.csv")
+```
+
+#### b
+
+```{r}
+colnames(AskAManager)<-c("Survey_Id","Time","Age_Range","Industry","Job","Job_Additional_Context","Annual_Salary","Additional_Bonus","Salary_Currency","Other_Salary_Currency","Salary_Additional_Context","Country_of_Work","US_state_of_Work","City_of_Work","Years_of_Work","Years_of_Work_in_Field","Education_Level","Gender","Race")
+```
+
+#### c
+
+```{r}
+orsampsize=nrow(AskAManager)
+AskAManagerUSD=AskAManager[which(AskAManager$Salary_Currency=="USD"|AskAManager$Other_Salary_Currency=="USD"),]
+sampsizec=nrow(AskAManagerUSD)
+```
+
+The sample size is decreased from `r orsampsize` to `r sampsizec`.
+
+#### d
+
+```{r}
+#unique(AskAManagerUSD$Age_Range)
+#unique(AskAManagerUSD$Years_of_Work)
+#unique(AskAManagerUSD$Years_of_Work_in_Field)
+AskAManagerUSD$Work_low_bond=case_when(AskAManagerUSD$Years_of_Work=="5-7 years"~5, 
+AskAManagerUSD$Years_of_Work=="2 - 4 years"~2, 
+AskAManagerUSD$Years_of_Work=="8 - 10 years"~8,  
+AskAManagerUSD$Years_of_Work=="21 - 30 years"~21,         
+AskAManagerUSD$Years_of_Work=="11 - 20 years"~11, 
+AskAManagerUSD$Years_of_Work=="41 years or more"~41,
+AskAManagerUSD$Years_of_Work=="31 - 40 years"~31,
+AskAManagerUSD$Years_of_Work=="1 year or less"~0)
+
+AskAManagerUSD$Work_low_bond_Field=case_when(AskAManagerUSD$Years_of_Work_in_Field=="5-7 years"~5, AskAManagerUSD$Years_of_Work_in_Field=="2 - 4 years"~2, AskAManagerUSD$Years_of_Work_in_Field=="8 - 10 years"~8,  AskAManagerUSD$Years_of_Work_in_Field=="21 - 30 years"~21,          AskAManagerUSD$Years_of_Work_in_Field=="11 - 20 years"~11, AskAManagerUSD$Years_of_Work_in_Field=="41 years or more"~41,AskAManagerUSD$Years_of_Work_in_Field=="31 - 40 years"~31,AskAManagerUSD$Years_of_Work_in_Field=="1 year or less"~0)
+
+AskAManagerUSD$Age_high_bond=case_when(
+  AskAManagerUSD$Age_Range=="25-34"~34,
+   AskAManagerUSD$Age_Range=="45-54"~54,
+   AskAManagerUSD$Age_Range=="35-44"~44,
+   AskAManagerUSD$Age_Range=="18-24"~24,
+   AskAManagerUSD$Age_Range=="65 or over"~100,#set a maximum here
+   AskAManagerUSD$Age_Range=="55-64"~64,
+  AskAManagerUSD$Age_Range=="under 18"~18
+)
+
+```
+
+```{r}
+print(sum(is.na(AskAManagerUSD$Age_high_bond)))
+print(sum(is.na(AskAManagerUSD$Work_low_bond)))
+print(sum(is.na(AskAManagerUSD$Work_low_bond_Field)))
+```
+
+```{r}
+AskAManagerUSD=AskAManagerUSD[which(AskAManagerUSD$Work_low_bond>=AskAManagerUSD$Work_low_bond_Field &AskAManagerUSD$Work_low_bond+18<=AskAManagerUSD$Age_high_bond),]
+sampsized=nrow(AskAManagerUSD)
+```
+
+The sample size is `r sampsized`.
+
+#### e
+
+```{r}
+print(sum(is.na(AskAManagerUSD$Annual_Salary)))
+boxplot(AskAManagerUSD$Annual_Salary,main="boxplot of annual salary",ylab="annual salary")
+hist(AskAManagerUSD[which(AskAManagerUSD$Annual_Salary<500),]$Annual_Salary, main=("hist of annual salary under 500"),xlab="annual salary")
+```
+
+From the box plot, we will delete the salary over $10^7$ , as they are far from the other observations. Besides, with the histgram, we can see a lot of low values are between 0 and 200, which will also be deleted.
+
+```{r}
+AskAManagerUSD=AskAManagerUSD[which(AskAManagerUSD$Annual_Salary<10^7&AskAManagerUSD$Annual_Salary>200),]
+sampsizefinal=nrow(AskAManagerUSD)
+
+```
+
+The final sample size is `r sampsizefinal`.
+
+### Problem 3 **Palindromic Numbers**
+
+#### a
+
+```{r}
+isPalindromic<-function(a){
+  if(!is.numeric(a)|a<0|!a%%1==0) stop("must be a positive integer")
+  temp=a
+  t=0
+while (temp>0){
+  t=t*10+temp%%10
+  temp=temp%/%10
+}
+return(list(isPalindromic=(t==a),reversed=t))
+}
+```
+
+```{r}
+isPalindromic(728827)
+isPalindromic(39951)
+```
+
+#### b
+
+```{r}
+nextPalindrome<-function(a){
+  if(!is.numeric(a)|a<0|!a%%1==0) stop("must be a positive integer")
+  t=a+1
+  while (!isPalindromic(t)$isPalindromic){t=t+1
+  }
+  return(t)}
+```
+
+```{r}
+nextPalindrome(7152)
+nextPalindrome(765431537)
+```
+
+#### c
+
+```{r}
+nextPalindrome(391)
+nextPalindrome(9928)
+nextPalindrome(19272719)
+nextPalindrome(109)
+nextPalindrome(2)
+```
